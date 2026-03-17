@@ -1,0 +1,85 @@
+site_name: JVM Modernisation Playbook
+site_url: https://marvinrichter.github.io/jvm-modernisation-playbook
+site_description: >-
+  Patterns for migrating legacy JVM monoliths to modern Spring Boot architecture —
+  with real code, not diagrams.
+site_author: Marvin Richter
+
+repo_url: https://github.com/marvinrichter/jvm-modernisation-playbook
+repo_name: marvinrichter/jvm-modernisation-playbook
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Patterns:
+    - Overview: patterns/index.md
+    - Strangler Fig: patterns/strangler-fig.md
+    - Branch-by-Abstraction: patterns/branch-by-abstraction.md
+    - Anti-Corruption Layer: patterns/anti-corruption-layer.md
+  - About: about.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/marvinrichter
+    - icon: fontawesome/solid/globe
+      link: https://marvin-richter.de
+
+copyright: >
+  Copyright &copy; 2026 Marvin Richter &mdash;
+  <a href="https://marvin-richter.de">marvin-richter.de</a>
