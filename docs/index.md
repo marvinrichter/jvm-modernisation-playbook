@@ -1,75 +1,75 @@
-# JVM Modernisation Playbook
+# JVM Modernisierungs-Playbook
 
-> **Patterns for migrating legacy JVM monoliths to modern Spring Boot architecture —
-> with real code, not diagrams.**
-
----
-
-Most modernisation guidance stops at the diagram. A neat Strangler Fig drawing, a
-three-layer hexagon, a "before/after" box-and-arrow slide. Then you're on your own when
-the legacy `OrderService` is 2,000 lines, has no tests, and six teams depend on it.
-
-This playbook covers the three patterns I reach for on every JVM modernisation
-engagement — not as theory, but as runnable before/after code examples you can clone,
-adapt, and run today.
+> **Muster für die Migration von Legacy-JVM-Monolithen zu moderner Spring-Boot-Architektur —
+> mit echtem Code, nicht nur mit Diagrammen.**
 
 ---
 
-## What's in here
+Die meisten Modernisierungsanleitungen hören beim Diagramm auf. Ein sauberes Strangler-Fig-Bild,
+ein drei­schichtiges Hexagon, eine „Vorher/Nachher"-Folie. Und dann stehst du allein da,
+wenn der Legacy-`OrderService` 2.000 Zeilen hat, keine Tests besitzt und sechs Teams von ihm abhängen.
+
+Dieses Playbook zeigt die drei Muster, die ich bei jedem JVM-Modernisierungsprojekt einsetze —
+nicht als Theorie, sondern als ausführbare Vorher/Nachher-Code-Beispiele, die du klonen,
+anpassen und heute noch ausführen kannst.
+
+---
+
+## Was dich erwartet
 
 === "Strangler Fig"
 
-    Route traffic through a Spring Boot gateway. The legacy system handles everything
-    at first. New capability is wired in path-by-path until the legacy is starved out
-    and deleted.
+    Leite Traffic über ein Spring-Boot-Gateway. Das Legacy-System bedient zunächst alles.
+    Neue Funktionalität wird Route für Route eingebunden, bis das Legacy-System ausgehungert
+    und gelöscht ist.
 
-    **When to use:** The legacy system is accessed via HTTP and can sit behind a proxy.
+    **Wann verwenden:** Das Legacy-System ist per HTTP erreichbar und kann hinter einen Proxy gestellt werden.
 
-    [Go to pattern →](patterns/strangler-fig.md)
+    [Zum Muster →](patterns/strangler-fig.md)
 
 === "Branch-by-Abstraction"
 
-    Extract the component you want to replace behind a port interface. Put both old and
-    new implementations behind it. Toggle via `@ConditionalOnProperty`. Delete the
-    legacy once confidence is high.
+    Extrahiere die zu ersetzende Komponente hinter eine Port-Schnittstelle. Lege alte und neue
+    Implementierung dahinter. Schalte per `@ConditionalOnProperty` um. Lösche die Legacy-Implementierung,
+    sobald das Vertrauen groß genug ist.
 
-    **When to use:** The component is a class / library called directly — not via HTTP.
+    **Wann verwenden:** Die Komponente wird direkt im Prozess aufgerufen — nicht per HTTP.
 
-    [Go to pattern →](patterns/branch-by-abstraction.md)
+    [Zum Muster →](patterns/branch-by-abstraction.md)
 
 === "Anti-Corruption Layer"
 
-    Translate between your legacy domain model and the new one at the boundary.
-    Prevents legacy naming, types, and broken assumptions from infecting fresh code.
+    Übersetze zwischen dem Legacy-Domänenmodell und dem neuen an der Grenze.
+    Verhindert, dass Legacy-Benennung, -Typen und -Annahmen frischen Code infizieren.
 
-    **When to use:** Legacy and new system have different domain concepts that must
-    coexist during migration.
+    **Wann verwenden:** Legacy- und neues System haben unterschiedliche Domänenkonzepte,
+    die während der Migration koexistieren müssen.
 
-    [Go to pattern →](patterns/anti-corruption-layer.md)
-
----
-
-## The target state
-
-Every "after" example in this playbook lands on the hexagonal architecture structure
-from [`spring-hexagonal-archetype`](https://github.com/marvinrichter/spring-hexagonal-archetype).
-If you want to understand the destination before studying the journey, start there.
+    [Zum Muster →](patterns/anti-corruption-layer.md)
 
 ---
 
-## Who this is for
+## Der Zielzustand
 
-- **Engineering managers** evaluating migration approaches before committing to one.
-- **Tech leads** who know *what* pattern to use but need to see the Spring Boot
-  specifics to feel confident proposing it to the team.
-- **Senior developers** who want a reference implementation alongside the theory.
+Jedes „Nachher"-Beispiel in diesem Playbook landet auf der hexagonalen Architekturstruktur
+aus [`spring-hexagonal-archetype`](https://github.com/marvinrichter/spring-hexagonal-archetype).
+Wenn du den Zielzustand verstehen möchtest, bevor du die Migration studierst, starte dort.
 
 ---
 
-## Who wrote this
+## Für wen ist das gedacht?
 
-I'm [Marvin Richter](https://marvin-richter.de), a freelance architect specialising in
-JVM modernisation. These are the patterns I use with clients — not theoretical constructs.
+- **Engineering Manager und CTOs**, die Migrationsansätze evaluieren, bevor sie sich festlegen.
+- **Tech Leads**, die wissen, *welches* Muster passt, aber die Spring-Boot-Spezifika brauchen,
+  um es dem Team überzeugend vorzuschlagen.
+- **Senior-Entwickler**, die neben der Theorie eine Referenzimplementierung suchen.
 
-If you're planning a modernisation and want a second opinion or someone to lead it:
-**[Let's talk →](https://marvin-richter.de)**
+---
+
+## Wer hat das geschrieben?
+
+Ich bin [Marvin Richter](https://marvin-richter.de), freiberuflicher Architekt mit Schwerpunkt
+JVM-Modernisierung. Das hier sind die Muster, die ich mit Kunden einsetze — keine theoretischen Konstrukte.
+
+Wenn du eine Modernisierung planst und eine zweite Meinung oder jemanden brauchst, der sie leitet:
+**[Lass uns reden →](https://marvin-richter.de)**

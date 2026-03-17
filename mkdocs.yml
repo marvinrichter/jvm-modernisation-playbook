@@ -1,8 +1,8 @@
-site_name: JVM Modernisation Playbook
+site_name: JVM Modernisierungs-Playbook
 site_url: https://marvinrichter.github.io/jvm-modernisation-playbook
 site_description: >-
-  Patterns for migrating legacy JVM monoliths to modern Spring Boot architecture —
-  with real code, not diagrams.
+  Muster für die Migration von Legacy-JVM-Monolithen zu moderner Spring-Boot-Architektur —
+  mit echtem Code, nicht nur mit Diagrammen.
 site_author: Marvin Richter
 
 repo_url: https://github.com/marvinrichter/jvm-modernisation-playbook
@@ -11,19 +11,20 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  language: de
   palette:
     - scheme: default
       primary: deep purple
       accent: indigo
       toggle:
         icon: material/brightness-7
-        name: Switch to dark mode
+        name: Zu Dunkel-Modus wechseln
     - scheme: slate
       primary: deep purple
       accent: indigo
       toggle:
         icon: material/brightness-4
-        name: Switch to light mode
+        name: Zu Hell-Modus wechseln
   features:
     - navigation.tabs
     - navigation.sections
@@ -37,7 +38,37 @@ theme:
     - content.tabs.link
 
 plugins:
-  - search
+  - search:
+      lang:
+        - de
+        - en
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: de
+          default: true
+          name: Deutsch
+          build: true
+          site_name: JVM Modernisierungs-Playbook
+          site_description: >-
+            Muster für die Migration von Legacy-JVM-Monolithen zu moderner Spring-Boot-Architektur —
+            mit echtem Code, nicht nur mit Diagrammen.
+          nav_translations:
+            Home: Startseite
+            Getting Started: Schnellstart
+            Patterns: Muster
+            Overview: Übersicht
+            About: Über das Playbook
+        - locale: en
+          name: English
+          build: true
+          site_name: JVM Modernisation Playbook
+          site_description: >-
+            Patterns for migrating legacy JVM monoliths to modern Spring Boot architecture —
+            with real code, not diagrams.
 
 markdown_extensions:
   - admonition
@@ -74,6 +105,13 @@ nav:
   - About: about.md
 
 extra:
+  alternate:
+    - name: Deutsch
+      link: /jvm-modernisation-playbook/
+      lang: de
+    - name: English
+      link: /jvm-modernisation-playbook/en/
+      lang: en
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/marvinrichter

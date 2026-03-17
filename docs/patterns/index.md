@@ -1,31 +1,31 @@
-# Migration Patterns
+# Migrationsmuster
 
-Three patterns cover the vast majority of JVM modernisation scenarios.
-Each is paired with a runnable Spring Boot example so you can see the
-exact code transformation, not just the concept.
-
----
-
-## Pattern map
-
-| Pattern | Situation | Risk | Typical duration |
-|---------|-----------|------|-----------------|
-| [Strangler Fig](strangler-fig.md) | HTTP-accessible legacy; route-by-route replacement | Low — legacy still handles all traffic initially | Weeks to months per route |
-| [Branch-by-Abstraction](branch-by-abstraction.md) | In-process class/service replacement | Medium — both implementations must be maintained in parallel | Days to weeks per component |
-| [Anti-Corruption Layer](anti-corruption-layer.md) | Different domain models between legacy and new | Low — translation is explicit and testable | 1–3 days to establish; ongoing as model diverges |
+Drei Muster decken den Großteil aller JVM-Modernisierungsszenarien ab.
+Jedes ist mit einem ausführbaren Spring-Boot-Beispiel gekoppelt, damit du die
+genaue Code-Transformation siehst — nicht nur das Konzept.
 
 ---
 
-## How to combine them
+## Musterübersicht
 
-These patterns are not mutually exclusive. A typical modernisation uses all three:
+| Muster | Situation | Risiko | Typische Dauer |
+|--------|-----------|--------|----------------|
+| [Strangler Fig](strangler-fig.md) | Per HTTP erreichbares Legacy; Route-für-Route-Ablösung | Gering — Legacy bedient anfangs noch den gesamten Traffic | Wochen bis Monate pro Route |
+| [Branch-by-Abstraction](branch-by-abstraction.md) | In-Process-Klassen-/Service-Ablösung | Mittel — beide Implementierungen müssen parallel gepflegt werden | Tage bis Wochen pro Komponente |
+| [Anti-Corruption Layer](anti-corruption-layer.md) | Unterschiedliche Domänenmodelle zwischen Legacy und Neu | Gering — Übersetzung ist explizit und testbar | 1–3 Tage Aufbau; laufend bei Modelldivergenz |
 
-1. **Strangler Fig** — routes traffic to a new Spring Boot service.
-2. **Branch-by-Abstraction** — replaces internal services within that new system
-   as the legacy code is extracted incrementally.
-3. **Anti-Corruption Layer** — sits at the boundary between new and legacy
-   services to prevent domain model pollution.
+---
 
-The order matters: the Strangler Fig creates the separation of concerns at the
-HTTP level; Branch-by-Abstraction operates inside the new service;
-the ACL manages the communication between them.
+## Muster kombinieren
+
+Diese Muster schließen sich nicht gegenseitig aus. Eine typische Modernisierung verwendet alle drei:
+
+1. **Strangler Fig** — leitet Traffic zu einem neuen Spring-Boot-Service um.
+2. **Branch-by-Abstraction** — ersetzt interne Services innerhalb dieses neuen Systems,
+   während Legacy-Code schrittweise extrahiert wird.
+3. **Anti-Corruption Layer** — sitzt an der Grenze zwischen neuem und altem Service,
+   um Domänenmodell-Pollution zu verhindern.
+
+Die Reihenfolge ist wichtig: der Strangler Fig schafft die Separation of Concerns auf HTTP-Ebene;
+Branch-by-Abstraction arbeitet innerhalb des neuen Services;
+der ACL verwaltet die Kommunikation zwischen beiden.

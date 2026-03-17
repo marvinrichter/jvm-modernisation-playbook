@@ -1,99 +1,99 @@
 # Anti-Corruption Layer
 
-> **Translate between your legacy domain model and the new one at the boundary.
-> Prevents legacy naming, types, and broken assumptions from infecting fresh code.**
+> **Übersetze zwischen dem Legacy-Domänenmodell und dem neuen an der Grenze.
+> Verhindert, dass Legacy-Benennung, -Typen und -Annahmen frischen Code infizieren.**
 
 ---
 
-## The problem
+## Das Problem
 
-Your legacy system has a `Customer` object with fields named `cust_nm`, `cust_addr1`,
-and a status encoded as `0/1/2`. Your new service has a `Client` with `name`,
-`address`, and a `ClientStatus` enum. They represent the same real-world concept
-but with different models.
+Dein Legacy-System hat ein `Customer`-Objekt mit Feldern wie `cust_nm`, `cust_addr1`
+und einem als Integer kodierten Status. Dein neuer Service hat einen `Client`
+mit `name`, `address` und einem `ClientStatus`-Enum. Beide repräsentieren dasselbe
+reale Konzept — aber mit unterschiedlichen Modellen.
 
-Without an Anti-Corruption Layer (ACL), one of two things happens:
-1. You rename everything in the legacy system — enormous risk, huge diff.
-2. The legacy naming leaks into the new system — the "big ball of mud" grows a new head.
+Ohne Anti-Corruption Layer (ACL) passiert eines von zwei Dingen:
+1. Du benennst alles im Legacy-System um — enormes Risiko, riesiger Diff.
+2. Die Legacy-Benennung sickert in den neuen Service — der „Big Ball of Mud" bekommt einen neuen Kopf.
 
-The ACL creates an explicit translation boundary. The legacy model stays as-is.
-The new model stays clean. The translator lives in one place and is testable in isolation.
-
----
-
-## When to use it
-
-- Legacy and new system have different domain concepts (different names, different
-  types, different cardinality)
-- You're calling a third-party API whose model doesn't match your domain
-- You're integrating with a legacy database schema you don't own and can't change
-
-**You almost always need this alongside a Strangler Fig or Branch-by-Abstraction.**
-Those patterns create the structural separation; the ACL prevents conceptual pollution
-across that boundary.
+Der ACL schafft eine explizite Übersetzungsgrenze. Das Legacy-Modell bleibt unverändert.
+Das neue Modell bleibt sauber. Der Übersetzer lebt an einem einzigen Ort und ist isoliert testbar.
 
 ---
 
-## How it works
+## Wann verwenden?
+
+- Legacy und neues System haben unterschiedliche Domänenkonzepte (unterschiedliche Namen,
+  Typen, Kardinalität)
+- Du rufst eine Drittanbieter-API auf, deren Modell nicht zu deiner Domäne passt
+- Du integrierst ein Legacy-Datenbankschema, das du nicht besitzt und nicht ändern kannst
+
+**Du brauchst dieses Muster fast immer in Kombination mit Strangler Fig oder Branch-by-Abstraction.**
+Jene Muster schaffen die strukturelle Trennung; der ACL verhindert konzeptuelle Kontamination
+über diese Grenze hinweg.
+
+---
+
+## Wie es funktioniert
 
 ```
-New domain          ACL (translator)       Legacy domain
-──────────          ────────────────       ─────────────
+Neue Domäne          ACL (Übersetzer)        Legacy-Domäne
+────────────         ─────────────────       ─────────────────
 
-Client              ← translate ←          Customer
-  .name             ← cust_nm  ←            .cust_nm
-  .address          ← cust_addr1 ←          .cust_addr1
-  .status           ← "0"→INACTIVE          .status (int)
-                       "1"→ACTIVE
-                       "2"→SUSPENDED
+Client               ← übersetzen ←          Customer
+  .name              ← cust_nm   ←             .cust_nm
+  .address           ← cust_addr1 ←            .cust_addr1
+  .status            ← "0"→INACTIVE            .status (int)
+                        "1"→ACTIVE
+                        "2"→SUSPENDED
 ```
 
-The translator is a plain Java class — no framework, no annotations.
-It takes a legacy object and returns a new domain object (or vice versa).
-That's it.
+Der Übersetzer ist eine einfache Java-Klasse — kein Framework, keine Annotationen.
+Er nimmt ein Legacy-Objekt und gibt ein neues Domänenobjekt zurück (oder umgekehrt).
+Das ist alles.
 
 ---
 
-## Example: Customer → Client translation
+## Beispiel: Customer → Client-Übersetzung
 
-The runnable example is in
+Das ausführbare Beispiel befindet sich in
 [`examples/acl/`](https://github.com/marvinrichter/jvm-modernisation-playbook/tree/main/examples/acl).
 
-### Project structure
+### Projektstruktur
 
 ```
 acl/
 ├── src/main/java/de/marvinrichter/acl/
 │   ├── AclApplication.java
 │   ├── legacy/
-│   │   ├── Customer.java              # Legacy model (unchanged)
-│   │   └── LegacyCustomerRepository.java
+│   │   ├── Customer.java                  # Legacy-Modell (unverändert)
+│   │   └── LegacyCustomerJpaRepository.java
 │   ├── newdomain/
-│   │   ├── Client.java                # New domain model
+│   │   ├── Client.java                    # Neues Domänenmodell
 │   │   ├── ClientStatus.java
-│   │   └── ClientRepository.java      # Port
+│   │   └── ClientRepository.java          # Port
 │   └── translation/
-│       ├── CustomerToClientTranslator.java   # (1) The ACL
-│       └── LegacyClientRepositoryAdapter.java # Adapter using the translator
+│       ├── CustomerToClientTranslator.java      # (1) Der ACL
+│       └── LegacyClientRepositoryAdapter.java   # Adapter, der den Übersetzer nutzt
 ```
 
-### The legacy model (do not modify)
+### Das Legacy-Modell (nicht modifizieren)
 
 ```java title="legacy/Customer.java"
-// (1) Legacy object — we don't own this, can't rename it
+// (1) Legacy-Objekt — gehört uns nicht, kann nicht umbenannt werden
 public class Customer {
     public String custId;
-    public String custNm;      // customer name
-    public String custAddr1;   // address line 1
-    public String custAddr2;   // address line 2
-    public int    status;      // 0=inactive, 1=active, 2=suspended
-    public String createDt;    // date as "YYYYMMDD" string (yes, really)
+    public String custNm;      // Kundenname
+    public String custAddr1;   // Adresszeile 1
+    public String custAddr2;   // Adresszeile 2
+    public int    status;      // 0=inaktiv, 1=aktiv, 2=gesperrt
+    public String createDt;    // Datum als "yyyyMMdd"-String
 }
 ```
 
-1. Abbreviated field names, numeric status, date as string — classic legacy.
+1. Abgekürzte Feldnamen, numerischer Status, Datum als String — klassisches Legacy.
 
-### The new domain model
+### Das neue Domänenmodell
 
 ```java title="newdomain/Client.java"
 public record Client(
@@ -115,39 +115,39 @@ public enum ClientStatus {
             case 1 -> ACTIVE;
             case 2 -> SUSPENDED;
             default -> throw new IllegalArgumentException(
-                "Unknown legacy status code: " + code);
+                    "Unbekannter Legacy-Statuscode: " + code);
         };
     }
 }
 ```
 
-### The Anti-Corruption Layer translator
+### Der Anti-Corruption Layer Übersetzer
 
 ```java title="translation/CustomerToClientTranslator.java"
 @Component
 public class CustomerToClientTranslator {
 
-    // (1) Pure translation — no Spring, no database, no side effects
+    // (1) Reine Übersetzung — kein Spring, keine Datenbank, keine Seiteneffekte
     public Client translate(Customer customer) {
         return new Client(
-            UUID.fromString(customer.custId),
-            customer.custNm,
-            new Address(customer.custAddr1, customer.custAddr2),
-            ClientStatus.fromLegacyCode(customer.status),
-            parseDate(customer.createDt)     // (2) Translate date format
+                UUID.fromString(customer.custId),
+                customer.custNm,
+                new Address(customer.custAddr1, customer.custAddr2),
+                ClientStatus.fromLegacyCode(customer.status),
+                parseDate(customer.createDt)     // (2) Datumsformat übersetzen
         );
     }
 
     public Customer reverseTranslate(Client client) {
-        // (3) Reverse translation for write-back to legacy
+        // (3) Rückübersetzung für Schreibzugriff auf Legacy
         var customer = new Customer();
-        customer.custId   = client.id().toString();
-        customer.custNm   = client.name();
+        customer.custId    = client.id().toString();
+        customer.custNm    = client.name();
         customer.custAddr1 = client.address().line1();
         customer.custAddr2 = client.address().line2();
-        customer.status   = client.status().ordinal();
-        customer.createDt = client.joinedDate()
-            .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        customer.status    = client.status().ordinal();
+        customer.createDt  = client.joinedDate()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         return customer;
     }
 
@@ -157,103 +157,93 @@ public class CustomerToClientTranslator {
 }
 ```
 
-1. The translator is a pure function — it takes a `Customer`, returns a `Client`. No IO.
-2. Date format conversion is explicit and tested.
-3. Reverse translation is needed if the new service also writes back to legacy storage.
+1. Der Übersetzer ist eine pure Funktion — nimmt `Customer`, gibt `Client`. Kein IO.
+2. Datumsformatkonvertierung ist explizit und getestet.
+3. Rückübersetzung wird benötigt, wenn der neue Service in die Legacy-Datenbank schreibt.
 
-### The adapter wires it together
+### Der Adapter verbindet alles
 
 ```java title="translation/LegacyClientRepositoryAdapter.java"
 @Repository
 public class LegacyClientRepositoryAdapter implements ClientRepository {
 
-    private final LegacyCustomerRepository legacyRepo;
+    private final LegacyCustomerJpaRepository legacyRepo;
     private final CustomerToClientTranslator translator;
-
-    public LegacyClientRepositoryAdapter(
-            LegacyCustomerRepository legacyRepo,
-            CustomerToClientTranslator translator) {
-        this.legacyRepo = legacyRepo;
-        this.translator = translator;
-    }
 
     @Override
     public Optional<Client> findById(UUID id) {
         return legacyRepo
-            .findByCustId(id.toString())                // (1) Call legacy repo
-            .map(translator::translate);                // (2) Translate at the boundary
+                .findByCustId(id.toString())          // (1) Legacy-Repo aufrufen
+                .map(translator::translate);           // (2) An der Grenze übersetzen
     }
 
     @Override
     public Client save(Client client) {
-        var customer = translator.reverseTranslate(client); // (3) Translate back
+        var customer = translator.reverseTranslate(client); // (3) Zurückübersetzen
         legacyRepo.save(customer);
         return client;
     }
 }
 ```
 
-1. Legacy repo uses string IDs — the adapter handles the UUID ↔ string conversion.
-2. Translation happens at the adapter boundary — the domain never sees `Customer`.
-3. Writing back to legacy requires reverse translation.
+1. Das Legacy-Repo verwendet String-IDs — der Adapter übernimmt die UUID ↔ String-Konvertierung.
+2. Übersetzung passiert an der Adaptergrenze — die Domäne sieht nie `Customer`.
+3. Schreibzugriff auf Legacy erfordert Rückübersetzung.
 
 ---
 
-## TypeScript BFF example
+## TypeScript-BFF-Beispiel
 
-The same ACL principle applies in a TypeScript Backend-for-Frontend (BFF) that
-calls both a legacy API and a new service during migration.
+Dasselbe Prinzip gilt in einem TypeScript-Backend-for-Frontend (BFF), das während
+der Migration sowohl eine Legacy-API als auch einen neuen Service aufruft:
 
 ```typescript title="bff/clientAdapter.ts"
-// Legacy API response shape (don't modify)
 interface LegacyCustomerResponse {
-  cust_id: string;
-  cust_nm: string;
-  cust_addr1: string;
-  status: 0 | 1 | 2;
+    cust_id: string;
+    cust_nm: string;
+    cust_addr1: string;
+    status: 0 | 1 | 2;
 }
 
-// New domain model (clean)
 interface Client {
-  id: string;
-  name: string;
-  address: string;
-  status: 'INACTIVE' | 'ACTIVE' | 'SUSPENDED';
+    id: string;
+    name: string;
+    address: string;
+    status: 'INACTIVE' | 'ACTIVE' | 'SUSPENDED';
 }
 
 const LEGACY_STATUS_MAP: Record<0 | 1 | 2, Client['status']> = {
-  0: 'INACTIVE',
-  1: 'ACTIVE',
-  2: 'SUSPENDED',
+    0: 'INACTIVE',
+    1: 'ACTIVE',
+    2: 'SUSPENDED',
 };
 
-// The ACL — translation at the boundary
+// Der ACL — Übersetzung an der Grenze
 function translateCustomer(legacy: LegacyCustomerResponse): Client {
-  return {
-    id: legacy.cust_id,
-    name: legacy.cust_nm,
-    address: legacy.cust_addr1,
-    status: LEGACY_STATUS_MAP[legacy.status],
-  };
+    return {
+        id: legacy.cust_id,
+        name: legacy.cust_nm,
+        address: legacy.cust_addr1,
+        status: LEGACY_STATUS_MAP[legacy.status],
+    };
 }
 
-// BFF service — consumers only see Client, never LegacyCustomerResponse
+// BFF-Service — Konsumenten sehen nur Client, nie LegacyCustomerResponse
 export async function getClient(id: string): Promise<Client> {
-  const response = await fetch(`/legacy/api/customers/${id}`);
-  const legacy: LegacyCustomerResponse = await response.json();
-  return translateCustomer(legacy); // (1) Translation at the network boundary
+    const response = await fetch(`/legacy/api/customers/${id}`);
+    const legacy: LegacyCustomerResponse = await response.json();
+    return translateCustomer(legacy); // (1) Übersetzung an der Netzwerkgrenze
 }
 ```
 
-1. The BFF translates once at the boundary. All downstream components use `Client`.
-   If the legacy API changes field names, only `translateCustomer` needs updating.
+1. Das BFF übersetzt einmal an der Grenze. Alle nachgelagerten Komponenten verwenden `Client`.
 
 ---
 
-## Testing the ACL
+## Den ACL testen
 
-The translator is the highest-value thing to test — it's where data loss or corruption
-happens. Because it has no dependencies, it's trivially unit-testable:
+Der Übersetzer ist das Wertvollste, was du testen kannst — hier passieren Datenverlust
+oder Datenverfälschung. Da er keine Abhängigkeiten hat, ist er trivial per Unit-Test testbar:
 
 ```java title="CustomerToClientTranslatorTest.java"
 class CustomerToClientTranslatorTest {
@@ -261,58 +251,57 @@ class CustomerToClientTranslatorTest {
     private final CustomerToClientTranslator translator = new CustomerToClientTranslator();
 
     @Test
-    void translates_active_customer_to_client() {
+    void übersetzt_aktiven_customer_zu_client() {
         var customer = new Customer();
-        customer.custId   = "00000000-0000-0000-0000-000000000001";
-        customer.custNm   = "Acme Corp";
-        customer.custAddr1 = "123 Main St";
-        customer.custAddr2 = "";
+        customer.custId   = UUID.randomUUID().toString();
+        customer.custNm   = "Acme GmbH";
+        customer.custAddr1 = "Hauptstraße 1";
         customer.status   = 1;
         customer.createDt = "20240101";
 
         var client = translator.translate(customer);
 
-        assertThat(client.name()).isEqualTo("Acme Corp");
+        assertThat(client.name()).isEqualTo("Acme GmbH");
         assertThat(client.status()).isEqualTo(ClientStatus.ACTIVE);
         assertThat(client.joinedDate()).isEqualTo(LocalDate.of(2024, 1, 1));
     }
 
     @Test
-    void throws_on_unknown_status_code() {
+    void wirft_bei_unbekanntem_statuscode() {
         var customer = new Customer();
-        customer.custId   = "00000000-0000-0000-0000-000000000001";
-        customer.status   = 99; // unknown code
+        customer.custId   = UUID.randomUUID().toString();
+        customer.status   = 99; // unbekannter Code
 
         assertThatThrownBy(() -> translator.translate(customer))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("99");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("99");
     }
 }
 ```
 
 ---
 
-## Migration checklist
+## Migrations-Checkliste
 
-- [ ] Define the new domain model (clean names, proper types, no legacy abbreviations)
-- [ ] Create the translator class (pure function — no IO, no Spring)
-- [ ] Write unit tests for the translator covering all status codes, edge cases, and error paths
-- [ ] Create the adapter that wraps the legacy repository using the translator
-- [ ] Verify: all callers of the legacy code now go through the adapter
-- [ ] Monitor: log translation errors in production (unknown status codes, parse failures)
-- [ ] Deprecate: once the legacy system is removed, delete the translator
+- [ ] Neues Domänenmodell definieren (saubere Namen, korrekte Typen, keine Legacy-Abkürzungen)
+- [ ] Übersetzerklasse erstellen (pure Funktion — kein IO, kein Spring)
+- [ ] Unit-Tests für den Übersetzer schreiben (alle Statuscodes, Edge Cases, Fehlerpfade)
+- [ ] Adapter erstellen, der das Legacy-Repository über den Übersetzer kapselt
+- [ ] Verifizieren: alle Aufrufer des Legacy-Codes gehen jetzt durch den Adapter
+- [ ] Überwachen: Übersetzungsfehler in Produktion loggen (unbekannte Statuscodes, Parse-Fehler)
+- [ ] Aufräumen: nach Entfernung des Legacy-Systems den Übersetzer löschen
 
 ---
 
-## Common pitfalls
+## Häufige Fehler
 
-**Letting the legacy model leak past the ACL.**
-If a field from `Customer` appears in a use case or domain object, the ACL has a hole.
-Enforce the boundary with ArchUnit:
+**Das Legacy-Modell am ACL vorbeisickern lassen.**
+Wenn ein Feld aus `Customer` in einem Use-Case oder Domänenobjekt auftaucht,
+hat der ACL ein Loch. Erzwinge die Grenze mit ArchUnit:
 
 ```java
 @Test
-void no_legacy_types_in_domain() {
+void keine_legacy_typen_in_der_domaene() {
     classes()
         .that().resideInAPackage("..newdomain..")
         .should().onlyDependOnClassesThat()
@@ -321,18 +310,18 @@ void no_legacy_types_in_domain() {
 }
 ```
 
-**Writing bi-directional translators when you don't need them.**
-If the new service never writes back to the legacy system, don't implement
-`reverseTranslate`. YAGNI applies.
+**Bidirektionale Übersetzer schreiben, wenn sie nicht benötigt werden.**
+Wenn der neue Service nie zurück in das Legacy-System schreibt, implementiere
+`reverseTranslate` nicht. YAGNI gilt.
 
-**Translating inside domain objects.**
-The translator belongs in the adapter layer — not in `Client`, not in use cases.
-Keep domain objects unaware of legacy structures.
+**In Domänenobjekten übersetzen.**
+Der Übersetzer gehört in die Adapterschicht — nicht in `Client`, nicht in Use-Cases.
+Domänenobjekte müssen unwissend über Legacy-Strukturen bleiben.
 
 ---
 
-## Further reading
+## Weiterführende Links
 
 - [Martin Fowler: Anti-Corruption Layer](https://martinfowler.com/eaaCatalog/corruptionLayer.html)
-- [DDD — Anti-Corruption Layer pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer)
-- [spring-hexagonal-archetype](https://github.com/marvinrichter/spring-hexagonal-archetype) — the target state this migration lands on
+- [DDD — Anti-Corruption Layer Pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/anti-corruption-layer)
+- [spring-hexagonal-archetype](https://github.com/marvinrichter/spring-hexagonal-archetype) — der Zielzustand, auf den diese Migration hinführt

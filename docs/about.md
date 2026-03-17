@@ -1,20 +1,21 @@
-# About
+# Über dieses Playbook
 
-## Why this playbook exists
+## Warum es dieses Playbook gibt
 
-Modernisation projects fail not because the patterns are unknown — they fail because the
-jump from "I understand Strangler Fig" to "I know how to wire this into our Spring Boot
-codebase" is enormous and under-documented.
+Modernisierungsprojekte scheitern nicht, weil die Muster unbekannt sind —
+sie scheitern, weil der Sprung von „ich verstehe Strangler Fig" zu
+„ich weiß, wie ich das in unsere Spring-Boot-Codebasis einbaue" enorm ist
+und kaum dokumentiert wird.
 
-I wrote this to close that gap. Every pattern here maps to real code I've written on
-client engagements. The examples are minimal but complete — no hand-waving,
-no "implementation left as an exercise for the reader".
+Ich habe dieses Playbook geschrieben, um diese Lücke zu schließen. Jedes Muster
+stammt aus echten Kundenprojekten. Die Beispiele sind minimal, aber vollständig —
+kein Handwedeln, kein „die Implementierung bleibt dem Leser überlassen".
 
-## The companion archetype
+## Der begleitende Archetype
 
-This playbook's "after" state is the
+Der „Nachher"-Zustand dieses Playbooks ist der
 [`spring-hexagonal-archetype`](https://github.com/marvinrichter/spring-hexagonal-archetype).
-Run:
+Ausführen mit:
 
 ```bash
 mvn archetype:generate \
@@ -23,28 +24,29 @@ mvn archetype:generate \
   -DarchetypeVersion=LATEST
 ```
 
-...to generate a Spring Boot project with the hexagonal structure that the migration
-patterns in this playbook target.
+...generiert ein Spring-Boot-Projekt mit der hexagonalen Struktur, auf die die
+Migrationsmuster in diesem Playbook abzielen.
 
-## About the author
+## Über den Autor
 
-I'm **Marvin Richter**, a freelance architect based in Germany specialising in:
+Ich bin **Marvin Richter**, freiberuflicher Architekt mit Sitz in Deutschland,
+spezialisiert auf:
 
-- JVM modernisation (Spring Boot, Quarkus, Micronaut)
-- Hexagonal / ports-and-adapters architecture
-- Kubernetes-native deployment
-- Platform engineering
+- JVM-Modernisierung (Spring Boot, Quarkus, Micronaut)
+- Hexagonale Architektur (Ports & Adapters)
+- Kubernetes-native Deployments
+- Platform Engineering
 
-I've helped teams migrate from legacy Spring MVC monoliths to well-structured,
-observable, and testable Spring Boot services.
+Ich helfe Teams dabei, von Legacy-Spring-MVC-Monolithen zu gut strukturierten,
+observierbaren und testbaren Spring-Boot-Services zu migrieren.
 
-If you're planning a modernisation — or wondering whether a rewrite is actually
-necessary — I'm happy to talk.
+Wenn du eine Modernisierung planst — oder dich fragst, ob ein Rewrite überhaupt
+nötig ist — spreche ich gerne mit dir.
 
 **[marvin-richter.de →](https://marvin-richter.de)**
 
-## Contributing
+## Mithelfen
 
-Found an error? Have a pattern to add?
-[Open an issue](https://github.com/marvinrichter/jvm-modernisation-playbook/issues)
-or submit a PR — the `docs/` directory is the place to start.
+Fehler gefunden? Ein weiteres Muster beizusteuern?
+[Öffne ein Issue](https://github.com/marvinrichter/jvm-modernisation-playbook/issues)
+oder schicke einen PR — das `docs/`-Verzeichnis ist der richtige Einstiegspunkt.

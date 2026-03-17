@@ -1,239 +1,200 @@
 # Strangler Fig
 
-> **Route traffic through a Spring Boot gateway. The legacy system handles everything
-> at first. New capability is wired in path-by-path until the legacy is starved out
-> and deleted.**
+> **Leite Traffic über ein Spring-Boot-Gateway. Das Legacy-System bedient zunächst alles.
+> Neue Funktionalität wird Route für Route eingebunden, bis das Legacy-System ausgehungert
+> und gelöscht ist.**
 
 ---
 
-## The problem
+## Das Problem
 
-Your legacy monolith handles all HTTP traffic. It works — but it's hard to change,
-slow to test, and impossible to deploy independently of unrelated features.
-You need to replace it, but a big-bang rewrite is too risky.
+Dein Legacy-Monolith bearbeitet den gesamten HTTP-Traffic. Er funktioniert — aber er ist schwer
+zu ändern, langsam zu testen und unabhängig von unabhängigen Features nicht deploybar.
+Du musst ihn ersetzen, aber ein Big-Bang-Rewrite ist zu riskant.
 
-The Strangler Fig installs a proxy in front of the legacy system on day one.
-All traffic passes through it unchanged. Then you migrate one route at a time:
-implement the route in the new service, flip the proxy, verify, repeat.
-When no routes remain, you delete the legacy.
-
----
-
-## When to use it
-
-- The legacy system is accessible via HTTP (REST, SOAP, old Spring MVC controllers)
-- You can install a proxy or gateway in front of it
-- You want incremental, reversible migration with production traffic as the
-  validation mechanism
-
-**Do not use it** if the legacy component is called in-process (shared library,
-direct class instantiation). Use [Branch-by-Abstraction](branch-by-abstraction.md) instead.
+Der Strangler Fig installiert am ersten Tag einen Proxy vor dem Legacy-System.
+Der gesamte Traffic läuft unverändert durch. Dann migrierst du eine Route nach der anderen:
+implementiere die Route im neuen Service, schalte den Proxy um, verifiziere, wiederhole.
+Wenn keine Routen mehr übrig sind, löschst du das Legacy.
 
 ---
 
-## How it works
+## Wann verwenden?
+
+- Das Legacy-System ist per HTTP erreichbar (REST, SOAP, alter Spring-MVC-Controller)
+- Du kannst einen Proxy oder ein Gateway davor schalten
+- Du möchtest eine inkrementelle, umkehrbare Migration mit echtem Produktionstraffic
+  als Validierungsmechanismus
+
+**Nicht verwenden**, wenn die Legacy-Komponente direkt im Prozess aufgerufen wird
+(shared Library, direkte Klasseninstanziierung). Verwende stattdessen
+[Branch-by-Abstraction](branch-by-abstraction.md).
+
+---
+
+## Wie es funktioniert
 
 ```
-Phase 1 — Install the proxy (zero behaviour change):
+Phase 1 — Proxy installieren (keine Verhaltensänderung):
 
-  Client → Gateway ──────────────────→ Legacy monolith
+  Client → Gateway ──────────────────→ Legacy-Monolith
 
-Phase 2 — Migrate one route:
+Phase 2 — Erste Route migrieren:
 
-  Client → Gateway → /orders (new) → New Spring Boot service (hexagonal)
-                   → everything else → Legacy monolith
+  Client → Gateway → /orders (neu) → Neuer Spring-Boot-Service (hexagonal)
+                   → alles andere  → Legacy-Monolith
 
-Phase 3 — Migrate all routes:
+Phase 3 — Alle Routen migrieren:
 
-  Client → Gateway → /orders       → New service
-                   → /products     → New service
-                   → /legacy-thing → New service
+  Client → Gateway → /orders       → Neuer Service
+                   → /products     → Neuer Service
+                   → /legacy-ding  → Neuer Service
 
-Phase 4 — Delete legacy:
+Phase 4 — Legacy löschen:
 
-  Client → Gateway → New service (all routes)
+  Client → Gateway → Neuer Service (alle Routen)
 
-Phase 5 — Remove the gateway (optional):
+Phase 5 — Gateway entfernen (optional):
 
-  Client → New service
+  Client → Neuer Service
 ```
 
-The legacy system is "strangled" — like the strangler fig vine that grows around
-a host tree until the host is gone.
+Das Legacy-System wird „erdrosselt" — wie die Würgefeige (Strangler Fig),
+die einen Wirtsbaum umwächst, bis der Wirt verschwunden ist.
 
 ---
 
-## Example: Spring Boot gateway
+## Beispiel: Spring-Boot-Gateway
 
-The runnable example is in
+Das ausführbare Beispiel befindet sich in
 [`examples/strangler-fig/`](https://github.com/marvinrichter/jvm-modernisation-playbook/tree/main/examples/strangler-fig).
 
-### Project structure
+### Projektstruktur
 
 ```
 strangler-fig/
 ├── src/main/java/de/marvinrichter/stranglerfig/
-│   ├── StranglerFigApplication.java          # Gateway application
-│   ├── gateway/
-│   │   └── RoutingConfig.java                # Route configuration — flip here
+│   ├── StranglerFigApplication.java
 │   ├── legacy/
-│   │   └── LegacyOrderController.java        # Old: procedural, no ports
+│   │   └── LegacyOrderController.java        # Alt: prozedural, keine Ports
 │   └── newservice/
-│       ├── adapter/in/web/OrderController.java  # New: hexagonal inbound adapter
-│       ├── application/OrderUseCase.java        # New: port interface
+│       ├── adapter/in/web/OrderController.java   # Neu: hexagonaler Inbound-Adapter
+│       ├── application/OrderUseCase.java          # Neu: Port-Schnittstelle
 │       ├── application/CreateOrderCommand.java
-│       └── domain/Order.java                   # New: pure domain object
+│       └── domain/Order.java                      # Neu: reines Domänenobjekt
 ```
 
-### Step 1 — The legacy controller (what you're replacing)
+### Schritt 1 — Der Legacy-Controller (was wir ersetzen)
 
 ```java title="legacy/LegacyOrderController.java"
 @RestController
 @RequestMapping("/api/orders")
+@ConditionalOnProperty(name = "feature.new-order-service.enabled",
+        havingValue = "false", matchIfMissing = true) // (1) Standard: Legacy aktiv
 public class LegacyOrderController {
 
-    // (1) Direct JPA — no ports, no abstraction
-    @Autowired
-    private EntityManager em;
+    private final OrderJpaRepository orderJpaRepository; // (2) direkte JPA-Abhängigkeit
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> createOrder(
             @RequestBody Map<String, Object> body) {
 
-        // (2) Business logic mixed with persistence — classic legacy smell
-        var order = new OrderEntity();
-        order.setCustomerId((String) body.get("customerId"));
-        order.setTotalAmount(new BigDecimal(body.get("totalAmount").toString()));
-        order.setStatus("PENDING");
-        em.persist(order);
+        // (3) Geschäftslogik und Persistenz gemischt
+        var entity = new OrderEntity(
+                (String) body.get("customerId"),
+                new BigDecimal(body.get("totalAmount").toString()));
+        orderJpaRepository.save(entity);
 
-        return ResponseEntity.ok(Map.of("orderId", order.getId(), "status", "PENDING"));
+        return ResponseEntity.ok(Map.of(
+                "orderId", entity.getId(),
+                "status",  entity.getStatus(),
+                "source",  "legacy"));
     }
 }
 ```
 
-1. No port interface — controller wires directly to JPA.
-2. Business rule ("status = PENDING") buried in the controller layer.
+1. Per `@ConditionalOnProperty` aktiv, wenn Feature-Flag auf `false` steht.
+2. Keine Port-Abstraktion — direkter JPA-Zugriff aus dem Controller.
+3. Geschäftsregel (`status = PENDING`) in der Infrastrukturschicht vergraben.
 
-### Step 2 — The new hexagonal implementation
+### Schritt 2 — Die neue hexagonale Implementierung
 
 ```java title="newservice/domain/Order.java"
-public record Order(
-        UUID id,
-        String customerId,
-        BigDecimal totalAmount,
-        OrderStatus status
-) {
+public record Order(UUID id, String customerId, BigDecimal totalAmount, OrderStatus status) {
     public static Order create(String customerId, BigDecimal totalAmount) {
+        if (totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Betrag muss positiv sein");
+        }
         return new Order(UUID.randomUUID(), customerId, totalAmount, OrderStatus.PENDING);
     }
 }
 ```
 
-```java title="newservice/application/OrderUseCase.java"
-public interface OrderUseCase {
-    Order createOrder(CreateOrderCommand command);
-}
-```
-
-```java title="newservice/adapter/in/web/OrderController.java"
+```java title="newservice/adapter/in/web/NewOrderController.java"
 @RestController
 @RequestMapping("/api/orders")
-public class OrderController {
+@ConditionalOnProperty(name = "feature.new-order-service.enabled", havingValue = "true")
+public class NewOrderController {
 
-    private final OrderUseCase orderUseCase; // (1) depends on port, not implementation
-
-    public OrderController(OrderUseCase orderUseCase) {
-        this.orderUseCase = orderUseCase;
-    }
+    private final OrderUseCase orderUseCase; // (1) hängt vom Port ab, nicht von JPA
 
     @PostMapping
-    public ResponseEntity<OrderResponse> createOrder(
-            @RequestBody CreateOrderRequest request) {
+    public ResponseEntity<OrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
         var order = orderUseCase.createOrder(request.toCommand());
         return ResponseEntity.status(HttpStatus.CREATED).body(OrderResponse.from(order));
     }
 }
 ```
 
-1. Controller depends on the `OrderUseCase` port — not on JPA.
+1. Der Controller kennt keine JPA-Details — nur den `OrderUseCase`-Port.
 
-### Step 3 — The routing configuration
-
-```java title="gateway/RoutingConfig.java"
-@Configuration
-public class RoutingConfig {
-
-    // (1) Feature flag — flip this to migrate route-by-route
-    @Value("${feature.new-order-service.enabled:false}")
-    private boolean newOrderServiceEnabled;
-
-    @Bean
-    public RouterFunction<ServerResponse> orderRoutes(
-            OrderController newController,
-            LegacyOrderController legacyController) {
-
-        if (newOrderServiceEnabled) {
-            // (2) Route to new hexagonal service
-            return route(POST("/api/orders"), newController::createOrder);
-        } else {
-            // (3) Keep routing to legacy
-            return route(POST("/api/orders"), legacyController::createOrder);
-        }
-    }
-}
-```
-
-1. A single boolean controls which implementation handles the route.
-2. When `true`, traffic goes to the new hexagonal controller.
-3. When `false` (default), legacy continues unchanged.
-
-### Step 4 — Flip the flag
+### Schritt 3 — Das Feature-Flag umschalten
 
 ```properties title="application.properties"
-# Flip to true when you're ready to migrate /api/orders to the new service
+# false (Standard) = Legacy-Controller aktiv
+# true             = Neuer hexagonaler Controller aktiv
 feature.new-order-service.enabled=false
 ```
 
-In production, manage this via Spring Cloud Config, environment variables,
-or a feature flag service (LaunchDarkly, Unleash). The code path is identical.
+Setze den Wert auf `true` in Staging, führe deine Tests aus, überprüfe, deploy in Produktion.
+Der URL-Vertrag (`/api/orders`) bleibt unverändert — Clients bemerken den Wechsel nicht.
+Spring registriert immer nur einen der beiden Controller als Bean.
 
 ---
 
-## Migration checklist
+## Migrations-Checkliste
 
-- [ ] Install the gateway in front of the legacy system (all traffic passes through unchanged)
-- [ ] Verify: production traffic is unaffected, latency is acceptable
-- [ ] Implement the first route in the new service (with tests)
-- [ ] Enable the feature flag in staging — run smoke tests
-- [ ] Enable in production — monitor error rate and latency for 48 hours
-- [ ] If stable: mark the legacy route as deprecated
-- [ ] Repeat for each route
-- [ ] When all routes are migrated: delete the legacy code
-- [ ] When the gateway is trivial (one route): consider removing it
-
----
-
-## Common pitfalls
-
-**Forgetting to handle legacy data formats.** The new service may need an
-[Anti-Corruption Layer](anti-corruption-layer.md) to translate legacy request/response
-shapes. Don't let the legacy API shape leak into your new domain model.
-
-**Running both implementations against the same database.** During migration, the
-legacy and new service may share a schema. Use separate schemas or a read model
-to prevent coupling.
-
-**Leaving the proxy in place permanently.** The proxy adds latency and a maintenance
-burden. Once migration is complete, route clients directly to the new service.
-
-**Migrating too many routes at once.** Migrate one route at a time. The point of the
-Strangler Fig is incremental risk reduction — don't defeat it by flipping everything
-at once.
+- [ ] Gateway vor dem Legacy-System installieren (gesamter Traffic läuft unverändert durch)
+- [ ] Verifizieren: Produktionstraffic unverändert, Latenz akzeptabel
+- [ ] Erste Route im neuen Service implementieren (mit Tests)
+- [ ] Feature-Flag in Staging aktivieren — Smoke-Tests ausführen
+- [ ] In Produktion aktivieren — Fehlerrate und Latenz 48 Stunden beobachten
+- [ ] Wenn stabil: Legacy-Route als deprecated markieren
+- [ ] Für jede weitere Route wiederholen
+- [ ] Wenn alle Routen migriert: Legacy-Code löschen
 
 ---
 
-## Further reading
+## Häufige Fehler
+
+**Legacy-Datenformate vergessen.** Der neue Service benötigt möglicherweise einen
+[Anti-Corruption Layer](anti-corruption-layer.md), um Legacy-Request-/Response-Formate
+zu übersetzen. Lass nicht zu, dass das Legacy-API-Format in dein neues Domänenmodell einsickert.
+
+**Beide Implementierungen gegen dieselbe Datenbank betreiben.** Während der Migration
+könnten Legacy und neuer Service dasselbe Schema verwenden. Nutze separate Schemas oder
+ein Read-Model, um Kopplung zu vermeiden.
+
+**Den Proxy dauerhaft bestehen lassen.** Der Proxy erhöht die Latenz und den Wartungsaufwand.
+Leite Clients nach Abschluss der Migration direkt zum neuen Service.
+
+**Zu viele Routen auf einmal migrieren.** Migriere eine Route nach der anderen.
+Der Sinn des Strangler Fig ist inkrementelle Risikoreduktion — untergrabe das nicht,
+indem du alles auf einmal umschaltest.
+
+---
+
+## Weiterführende Links
 
 - [Martin Fowler: Strangler Fig Application](https://martinfowler.com/bliki/StranglerFigApplication.html)
-- [spring-hexagonal-archetype](https://github.com/marvinrichter/spring-hexagonal-archetype) — the target state this migration lands on
+- [spring-hexagonal-archetype](https://github.com/marvinrichter/spring-hexagonal-archetype) — der Zielzustand, auf den diese Migration hinführt

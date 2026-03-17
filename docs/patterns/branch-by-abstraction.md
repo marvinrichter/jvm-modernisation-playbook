@@ -1,126 +1,115 @@
 # Branch-by-Abstraction
 
-> **Extract the component you want to replace behind a port interface. Put both old and
-> new implementations behind it. Toggle via `@ConditionalOnProperty`. Delete the
-> legacy once confidence is high.**
+> **Extrahiere die zu ersetzende Komponente hinter eine Port-Schnittstelle. Lege alte und neue
+> Implementierung dahinter. Schalte per `@ConditionalOnProperty` um. Lösche die Legacy-Implementierung,
+> sobald das Vertrauen groß genug ist.**
 
 ---
 
-## The problem
+## Das Problem
 
-A Spring `@Service` has grown into a 1,500-line class with hardcoded JPA queries,
-mixed business rules, and no tests. Every other service depends on it directly.
-You can't rewrite it in a branch without a months-long merge nightmare.
-You need to replace it while production traffic keeps flowing.
-
----
-
-## When to use it
-
-- The component is called directly (not via HTTP) — a Spring bean, a utility class,
-  a library dependency
-- You can define a clear interface for what the component does
-- You want to run old and new implementations in parallel for safety
-
-**Use [Strangler Fig](strangler-fig.md) instead** if the component is accessed
-via HTTP and can be proxied at the network level.
+Ein Spring-`@Service` ist zu einer 1.500-Zeilen-Klasse angewachsen, mit fest verdrahteten
+JPA-Queries, gemischten Geschäftsregeln und keinen Tests. Jeder andere Service hängt direkt
+davon ab. Du kannst ihn in einem Branch nicht neu schreiben, ohne einen monatelangen
+Merge-Alptraum zu riskieren. Du musst ihn ersetzen, während der Produktionstraffic weiterläuft.
 
 ---
 
-## How it works
+## Wann verwenden?
+
+- Die Komponente wird direkt im Prozess aufgerufen (nicht per HTTP) — ein Spring-Bean,
+  eine Utility-Klasse, eine Library-Abhängigkeit
+- Du kannst eine klare Schnittstelle für das definieren, was die Komponente tut
+- Du möchtest alte und neue Implementierung parallel betreiben, um Sicherheit zu gewinnen
+
+**Verwende stattdessen [Strangler Fig](strangler-fig.md)**, wenn die Komponente per HTTP
+erreichbar ist und auf Netzwerkebene dahinter ein Proxy gesetzt werden kann.
+
+---
+
+## Wie es funktioniert
 
 ```
-Step 1 — Extract an interface from the legacy class:
+Schritt 1 — Interface aus der Legacy-Klasse extrahieren:
 
-  OrderService (concrete class, 1500 lines)
+  OrderService (konkrete Klasse, 1500 Zeilen)
   ↓
-  OrderPort (interface)
-  LegacyOrderService implements OrderPort   ← unchanged legacy code behind interface
+  OrderPort (Interface)
+  LegacyOrderService implements OrderPort   ← unveränderter Legacy-Code hinter Interface
 
-Step 2 — Implement the new version:
+Schritt 2 — Neue Version implementieren:
 
-  NewOrderService implements OrderPort      ← new hexagonal implementation
+  NewOrderService implements OrderPort      ← neue hexagonale Implementierung
 
-Step 3 — Toggle via feature flag:
+Schritt 3 — Per Feature-Flag umschalten:
 
   @ConditionalOnProperty("feature.new-order-service")
-  LegacyOrderService  OR  NewOrderService
+  LegacyOrderService  ODER  NewOrderService
 
-Step 4 — Delete legacy:
+Schritt 4 — Legacy löschen:
 
-  Remove LegacyOrderService + feature flag
-  Rename OrderPort → OrderService (or keep as a port — your call)
+  LegacyOrderService + Feature-Flag entfernen
 ```
 
-At no point is production code broken. Both implementations are deployed together;
-the flag controls which one handles requests.
+Zu keinem Zeitpunkt ist der Produktionscode kaputt. Beide Implementierungen werden zusammen
+deployed; das Flag bestimmt, welche Anfragen bearbeitet.
 
 ---
 
-## Example: Replacing a legacy order service
+## Beispiel: Legacy-Order-Service ersetzen
 
-The runnable example is in
+Das ausführbare Beispiel befindet sich in
 [`examples/branch-by-abstraction/`](https://github.com/marvinrichter/jvm-modernisation-playbook/tree/main/examples/branch-by-abstraction).
 
-### Project structure
+### Projektstruktur
 
 ```
 branch-by-abstraction/
 ├── src/main/java/de/marvinrichter/bba/
 │   ├── BranchByAbstractionApplication.java
 │   ├── before/
-│   │   └── LegacyOrderService.java           # Original: direct JPA, no interface
+│   │   └── LegacyOrderService.java           # Original: direktes JPA, kein Interface
 │   └── after/
 │       ├── application/
-│       │   ├── OrderPort.java                # (1) The extracted port interface
+│       │   ├── OrderPort.java                # (1) Das extrahierte Port-Interface
 │       │   └── CreateOrderCommand.java
 │       ├── domain/
 │       │   ├── Order.java
 │       │   └── OrderStatus.java
 │       └── adapter/
 │           ├── in/web/
-│           │   └── OrderController.java      # Depends on OrderPort, not the impl
+│           │   └── OrderController.java      # Hängt von OrderPort ab, nicht der Impl.
 │           └── out/persistence/
-│               ├── JpaOrderAdapter.java      # (2) New implementation behind the port
-│               └── OrderJpaEntity.java
+│               └── JpaOrderAdapter.java      # (2) Neue Implementierung hinter dem Port
 ```
 
-### Before: the legacy service
+### Vorher: der Legacy-Service
 
 ```java title="before/LegacyOrderService.java"
 @Service
 public class LegacyOrderService {
 
-    // (1) Mixed concerns: business logic + persistence
     @Autowired
-    private OrderJpaRepository orderJpaRepository;
+    private OrderJpaRepository orderJpaRepository; // (1) Gemischte Zuständigkeiten
 
     public Map<String, Object> createOrder(String customerId, BigDecimal amount) {
-        // (2) Business rule buried in infrastructure layer
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) { // (2) Geschäftsregel in Infrastruktur
+            throw new IllegalArgumentException("Betrag muss positiv sein");
         }
-
-        var entity = new OrderEntity();
-        entity.setCustomerId(customerId);
-        entity.setAmount(amount);
-        entity.setStatus("PENDING"); // (3) Status as magic string
-        entity.setCreatedAt(LocalDateTime.now());
+        var entity = new LegacyOrderEntity(customerId, amount);
         orderJpaRepository.save(entity);
-
         return Map.of(
-            "orderId", entity.getId(),
-            "status",  entity.getStatus()
-        );
+                "orderId", entity.getId(),
+                "status",  entity.getStatus()); // (3) Status als Magic String
     }
 }
 ```
 
-1. Business logic and JPA are in the same class — impossible to test without a database.
-2. The business rule (amount > 0) belongs in the domain, not the service layer.
-3. Status as a magic string — no type safety.
+1. Geschäftslogik und JPA in einer Klasse — ohne Datenbank nicht testbar.
+2. Die Geschäftsregel (Betrag > 0) gehört in die Domäne, nicht in den Service.
+3. Status als Magic String — keine Typsicherheit.
 
-### Step 1 — Extract the port interface
+### Schritt 1 — Port-Interface extrahieren
 
 ```java title="after/application/OrderPort.java"
 public interface OrderPort {
@@ -131,151 +120,134 @@ public interface OrderPort {
 ```java title="after/application/CreateOrderCommand.java"
 public record CreateOrderCommand(String customerId, BigDecimal totalAmount) {
     public CreateOrderCommand {
-        Objects.requireNonNull(customerId, "customerId must not be null");
+        Objects.requireNonNull(customerId, "customerId darf nicht null sein");
         if (totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("totalAmount must be positive");
+            throw new IllegalArgumentException("totalAmount muss positiv sein");
         }
     }
 }
 ```
 
-The business rule (amount > 0) now lives in the command — tested once,
-enforced everywhere.
+Die Geschäftsregel (Betrag > 0) lebt jetzt im Command — einmal getestet,
+überall durchgesetzt.
 
-### Step 2 — Wrap the legacy service behind the interface
+### Schritt 2 — Legacy-Service hinter Interface kapseln
 
-```java title="Wrapping LegacyOrderService (transitional)"
+```java title="LegacyOrderAdapter (Übergangsschritt)"
 @Service
 @ConditionalOnProperty(name = "feature.new-order-service", havingValue = "false",
-                       matchIfMissing = true) // (1) Default: legacy
+                       matchIfMissing = true) // (1) Standard: Legacy aktiv
 public class LegacyOrderAdapter implements OrderPort {
 
     private final LegacyOrderService legacyOrderService;
 
-    public LegacyOrderAdapter(LegacyOrderService legacyOrderService) {
-        this.legacyOrderService = legacyOrderService;
-    }
-
     @Override
     public Order createOrder(CreateOrderCommand command) {
-        // (2) Translate — ACL pattern inside the adapter
+        // (2) Übersetzung — ACL-Muster innerhalb des Adapters
         var result = legacyOrderService.createOrder(
-            command.customerId(), command.totalAmount());
+                command.customerId(), command.totalAmount());
         return new Order(
-            UUID.fromString(result.get("orderId").toString()),
-            command.customerId(),
-            command.totalAmount(),
-            OrderStatus.PENDING
-        );
+                (java.util.UUID) result.get("orderId"),
+                command.customerId(),
+                command.totalAmount(),
+                OrderStatus.PENDING);
     }
 }
 ```
 
-1. Active when `feature.new-order-service=false` (the default — no change in production).
-2. The adapter translates between the legacy return type (`Map`) and the new `Order` domain object.
+1. Aktiv wenn `feature.new-order-service=false` (Standard — keine Änderung in Produktion).
+2. Der Adapter übersetzt zwischen dem Legacy-Rückgabetyp (`Map`) und dem neuen `Order`-Domänenobjekt.
 
-### Step 3 — Implement the new version
+### Schritt 3 — Neue Version implementieren
 
 ```java title="after/adapter/out/persistence/JpaOrderAdapter.java"
 @Repository
 @ConditionalOnProperty(name = "feature.new-order-service", havingValue = "true")
 public class JpaOrderAdapter implements OrderPort {
 
-    private final OrderJpaRepository orderJpaRepository;
-
-    public JpaOrderAdapter(OrderJpaRepository orderJpaRepository) {
-        this.orderJpaRepository = orderJpaRepository;
-    }
+    private final OrderJpaRepository jpaRepository;
 
     @Override
     public Order createOrder(CreateOrderCommand command) {
-        var entity = new OrderJpaEntity(
-            UUID.randomUUID(),
-            command.customerId(),
-            command.totalAmount(),
-            OrderStatus.PENDING
-        );
-        orderJpaRepository.save(entity);
-        return entity.toDomain();
+        var order = Order.create(command.customerId(), command.totalAmount());
+        jpaRepository.save(new OrderJpaEntity(order));
+        return order;
     }
 }
 ```
 
-### Step 4 — The controller depends only on the port
+### Schritt 4 — Der Controller hängt nur vom Port ab
 
 ```java title="after/adapter/in/web/OrderController.java"
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
 
-    private final OrderPort orderPort; // (1) depends on the interface
-
-    public OrderController(OrderPort orderPort) {
-        this.orderPort = orderPort;
-    }
+    private final OrderPort orderPort; // (1) hängt vom Interface ab
 
     @PostMapping
-    public ResponseEntity<OrderResponse> createOrder(
-            @RequestBody CreateOrderRequest request) {
+    public ResponseEntity<OrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
         var order = orderPort.createOrder(request.toCommand());
         return ResponseEntity.status(HttpStatus.CREATED).body(OrderResponse.from(order));
     }
 }
 ```
 
-1. The controller is unchanged whether the legacy or new implementation is active.
+1. Der Controller ist unverändert — egal ob Legacy- oder neue Implementierung aktiv ist.
 
-### Step 5 — Flip the flag
+### Schritt 5 — Flag umschalten
 
 ```properties title="application.properties"
-# Set to true to activate the new JPA adapter (default: false = legacy)
+# false (Standard) = LegacyOrderAdapter aktiv
+# true             = JpaOrderAdapter aktiv
 feature.new-order-service=false
 ```
 
-Flip to `true` in staging, run your test suite, monitor, flip to `true` in production.
+In Staging auf `true` setzen, Testsuite ausführen, überwachen, in Produktion auf `true` setzen.
 
-### Step 6 — Delete the legacy
+### Schritt 6 — Legacy löschen
 
-Once the new implementation has been running in production for a sufficient period:
+Sobald die neue Implementierung ausreichend lange stabil in Produktion läuft:
 
-1. Delete `LegacyOrderService` and `LegacyOrderAdapter`
-2. Remove the `@ConditionalOnProperty` from `JpaOrderAdapter` (it's now always active)
-3. Rename `JpaOrderAdapter` to `OrderRepository` or keep the port pattern — your call
-4. Delete the feature flag from `application.properties`
-
----
-
-## Migration checklist
-
-- [ ] Extract a port interface from the legacy class (no behaviour change)
-- [ ] Wrap the legacy class behind the interface (still no behaviour change)
-- [ ] Update callers to depend on the interface (not the concrete class)
-- [ ] Implement the new version behind the same interface
-- [ ] Gate with `@ConditionalOnProperty` — default: legacy active
-- [ ] Run both implementations in integration tests (test each explicitly)
-- [ ] Enable new implementation in staging — run full test suite
-- [ ] Enable in production — monitor for 48–72 hours
-- [ ] If stable: remove legacy implementation and feature flag
+1. `LegacyOrderService` und `LegacyOrderAdapter` löschen
+2. `@ConditionalOnProperty` aus `JpaOrderAdapter` entfernen (ist jetzt immer aktiv)
+3. Feature-Flag aus `application.properties` entfernen
 
 ---
 
-## Common pitfalls
+## Migrations-Checkliste
 
-**Extracting an interface that mirrors the implementation, not the intent.**
-An interface with `saveToDatabase(Order order)` is not a port — it's a leaky
-abstraction that couples callers to the storage mechanism. Use `saveOrder(Order)`.
-
-**Leaving both implementations active indefinitely.**
-The feature flag is a migration tool, not a permanent configuration option.
-Set a calendar reminder: if the flag isn't flipped within 4 weeks, investigate why.
-
-**Not testing the legacy wrapper.**
-The `LegacyOrderAdapter` translation code is where bugs hide. Write explicit
-unit tests for it — especially for data types that differ between legacy and new models.
+- [ ] Port-Interface aus der Legacy-Klasse extrahieren (keine Verhaltensänderung)
+- [ ] Legacy-Klasse hinter dem Interface kapseln (immer noch keine Verhaltensänderung)
+- [ ] Aufrufer so aktualisieren, dass sie vom Interface abhängen (nicht von der konkreten Klasse)
+- [ ] Neue Version hinter demselben Interface implementieren
+- [ ] Mit `@ConditionalOnProperty` absichern — Standard: Legacy aktiv
+- [ ] Beide Implementierungen in Integrationstests ausführen
+- [ ] Neue Implementierung in Staging aktivieren — vollständige Testsuite ausführen
+- [ ] In Produktion aktivieren — 48–72 Stunden überwachen
+- [ ] Wenn stabil: Legacy-Implementierung und Feature-Flag entfernen
 
 ---
 
-## Further reading
+## Häufige Fehler
+
+**Ein Interface extrahieren, das die Implementierung widerspiegelt, nicht die Absicht.**
+Ein Interface mit `saveToDatabase(Order order)` ist kein Port — es ist eine undichte
+Abstraktion, die Aufrufer an den Speichermechanismus koppelt. Verwende `saveOrder(Order)`.
+
+**Beide Implementierungen dauerhaft aktiv lassen.**
+Das Feature-Flag ist ein Migrationswerkzeug, keine dauerhafte Konfigurationsoption.
+Setze dir einen Kalendertermin: Wenn das Flag nicht innerhalb von 4 Wochen umgeschaltet
+wird, untersuche warum.
+
+**Den Legacy-Wrapper nicht testen.**
+Der Übersetzungscode in `LegacyOrderAdapter` ist der Ort, an dem Bugs versteckt sind.
+Schreibe explizite Unit-Tests dafür — besonders für Datentypen, die zwischen Legacy-
+und neuem Modell unterschiedlich sind.
+
+---
+
+## Weiterführende Links
 
 - [Martin Fowler: Branch By Abstraction](https://martinfowler.com/bliki/BranchByAbstraction.html)
-- [spring-hexagonal-archetype](https://github.com/marvinrichter/spring-hexagonal-archetype) — the target state this migration lands on
+- [spring-hexagonal-archetype](https://github.com/marvinrichter/spring-hexagonal-archetype) — der Zielzustand, auf den diese Migration hinführt
