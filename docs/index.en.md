@@ -51,9 +51,9 @@ adapt, and run today.
 
 ## The target state
 
-Every "after" example in this playbook lands on the hexagonal architecture structure
-from [`spring-hexagonal-archetype`](https://github.com/marvinrichter/spring-hexagonal-archetype).
-If you want to understand the destination before studying the journey, start there.
+The [`spring-hexagonal-archetype`](https://github.com/marvinrichter/spring-hexagonal-archetype)
+is the destination every example in this playbook targets.
+If you want to see the structure before walking through the migrations, start there.
 
 ---
 
@@ -69,7 +69,9 @@ If you want to understand the destination before studying the journey, start the
 ## Who wrote this
 
 I'm [Marvin Richter](https://marvin-richter.de), a freelance architect specialising in
-JVM modernisation. These are the patterns I use with clients — not theoretical constructs.
+JVM modernisation. I've used each of these patterns on real client projects — these are
+not theoretical constructs assembled for a talk.
 
-If you're planning a modernisation and want a second opinion or someone to lead it:
+If you're planning a modernisation and want a second opinion on which patterns to apply
+and how to sequence them:
 **[Let's talk →](https://marvin-richter.de)**

@@ -1,8 +1,9 @@
 # Migrationsmuster
 
-Drei Muster decken den Großteil aller JVM-Modernisierungsszenarien ab.
-Jedes ist mit einem ausführbaren Spring-Boot-Beispiel gekoppelt, damit du die
-genaue Code-Transformation siehst — nicht nur das Konzept.
+Die meiste JVM-Modernisierungsarbeit lässt sich auf drei strukturelle Probleme
+reduzieren: Legacy-Code läuft hinter HTTP, oder er wird direkt als Klasse aufgerufen,
+oder die Domänenmodelle stimmen nicht überein. Für jedes gibt es ein Muster — jeweils
+mit einem ausführbaren Spring-Boot-Beispiel, das die konkrete Code-Transformation zeigt.
 
 ---
 
@@ -26,6 +27,6 @@ Diese Muster schließen sich nicht gegenseitig aus. Eine typische Modernisierung
 3. **Anti-Corruption Layer** — sitzt an der Grenze zwischen neuem und altem Service,
    um Domänenmodell-Pollution zu verhindern.
 
-Die Reihenfolge ist wichtig: der Strangler Fig schafft die Separation of Concerns auf HTTP-Ebene;
-Branch-by-Abstraction arbeitet innerhalb des neuen Services;
-der ACL verwaltet die Kommunikation zwischen beiden.
+Die Reihenfolge ist wichtig: der Strangler Fig steuert, was das Legacy-System überhaupt
+noch erreicht. Branch-by-Abstraction restrukturiert die Interna des neuen Services.
+Der ACL verhindert, dass die beiden Domänenmodelle ineinander bluten.

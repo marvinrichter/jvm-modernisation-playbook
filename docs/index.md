@@ -51,9 +51,9 @@ anpassen und heute noch ausführen kannst.
 
 ## Der Zielzustand
 
-Jedes „Nachher"-Beispiel in diesem Playbook landet auf der hexagonalen Architekturstruktur
-aus [`spring-hexagonal-archetype`](https://github.com/marvinrichter/spring-hexagonal-archetype).
-Wenn du den Zielzustand verstehen möchtest, bevor du die Migration studierst, starte dort.
+Der [`spring-hexagonal-archetype`](https://github.com/marvinrichter/spring-hexagonal-archetype)
+ist der Zielzustand, auf den jedes Beispiel in diesem Playbook hinausläuft.
+Wer die Struktur sehen will, bevor es in die Beispiele geht — fang dort an.
 
 ---
 
@@ -69,7 +69,9 @@ Wenn du den Zielzustand verstehen möchtest, bevor du die Migration studierst, s
 ## Wer hat das geschrieben?
 
 Ich bin [Marvin Richter](https://marvin-richter.de), freiberuflicher Architekt mit Schwerpunkt
-JVM-Modernisierung. Das hier sind die Muster, die ich mit Kunden einsetze — keine theoretischen Konstrukte.
+JVM-Modernisierung. Ich habe jedes dieser Muster in echten Kundenprojekten eingesetzt —
+keine Konstrukte, die für einen Vortrag zusammengestellt wurden.
 
-Wenn du eine Modernisierung planst und eine zweite Meinung oder jemanden brauchst, der sie leitet:
+Wenn du eine Modernisierung planst und eine zweite Meinung brauchst, welche Muster
+passen und in welcher Reihenfolge:
 **[Lass uns reden →](https://marvin-richter.de)**

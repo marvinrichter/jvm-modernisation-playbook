@@ -29,24 +29,17 @@ Migrationsmuster in diesem Playbook abzielen.
 
 ## Über den Autor
 
-Ich bin **Marvin Richter**, freiberuflicher Architekt mit Sitz in Deutschland,
-spezialisiert auf:
+Ich bin **Marvin Richter**, freiberuflicher Architekt mit Sitz in Deutschland.
+Die meisten meiner Kunden kommen zu mir, wenn ein Legacy-Spring-MVC-Monolith so weit
+gewachsen ist, dass ein Feature, das einen Tag dauern sollte, zwei Wochen braucht.
+Ich helfe dabei herauszufinden, ob das ein Rewrite, eine Migration oder eine strukturelle
+Änderung ist — und setze es dann gemeinsam mit dem Team um.
 
-- JVM-Modernisierung (Spring Boot, Quarkus, Micronaut)
-- Hexagonale Architektur (Ports & Adapters)
-- Kubernetes-native Deployments
-- Platform Engineering
-
-Ich helfe Teams dabei, von Legacy-Spring-MVC-Monolithen zu gut strukturierten,
-observierbaren und testbaren Spring-Boot-Services zu migrieren.
-
-Wenn du eine Modernisierung planst — oder dich fragst, ob ein Rewrite überhaupt
-nötig ist — spreche ich gerne mit dir.
-
-**[marvin-richter.de →](https://marvin-richter.de)**
+Wenn du eine Modernisierung planst — oder noch nicht sicher bist, ob du eine brauchst —
+**[meld dich →](https://marvin-richter.de)**
 
 ## Mithelfen
 
-Fehler gefunden? Ein weiteres Muster beizusteuern?
+Fehler gefunden? Hast du ein Muster beizusteuern?
 [Öffne ein Issue](https://github.com/marvinrichter/jvm-modernisation-playbook/issues)
 oder schicke einen PR — das `docs/`-Verzeichnis ist der richtige Einstiegspunkt.

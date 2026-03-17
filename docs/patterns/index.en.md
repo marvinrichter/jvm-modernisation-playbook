@@ -1,8 +1,9 @@
 # Migration Patterns
 
-Three patterns cover the vast majority of JVM modernisation scenarios.
-Each is paired with a runnable Spring Boot example so you can see the
-exact code transformation, not just the concept.
+Most JVM modernisation work reduces to three structural problems: the legacy code is
+behind HTTP, or it is a class called directly, or the domain models do not match.
+There is a pattern for each — and each is paired with a runnable Spring Boot example
+showing the exact code transformation, not just the concept.
 
 ---
 
@@ -26,6 +27,6 @@ These patterns are not mutually exclusive. A typical modernisation uses all thre
 3. **Anti-Corruption Layer** — sits at the boundary between new and legacy
    services to prevent domain model pollution.
 
-The order matters: the Strangler Fig creates the separation of concerns at the
-HTTP level; Branch-by-Abstraction operates inside the new service;
-the ACL manages the communication between them.
+The order matters: the Strangler Fig controls what reaches the legacy system at all.
+Branch-by-Abstraction restructures the internals of the new service.
+The ACL keeps the two domain models from bleeding into each other.

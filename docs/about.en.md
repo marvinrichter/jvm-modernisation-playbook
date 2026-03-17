@@ -28,23 +28,16 @@ patterns in this playbook target.
 
 ## About the author
 
-I'm **Marvin Richter**, a freelance architect based in Germany specialising in:
+I'm **Marvin Richter**, a freelance architect based in Germany. Most of my clients come
+to me when a legacy Spring MVC monolith has grown to the point where a feature that
+should take a day takes two weeks. I help them figure out whether that's a rewrite, a
+migration, or a structural change — and then I do it with them.
 
-- JVM modernisation (Spring Boot, Quarkus, Micronaut)
-- Hexagonal / ports-and-adapters architecture
-- Kubernetes-native deployment
-- Platform engineering
-
-I've helped teams migrate from legacy Spring MVC monoliths to well-structured,
-observable, and testable Spring Boot services.
-
-If you're planning a modernisation — or wondering whether a rewrite is actually
-necessary — I'm happy to talk.
-
+If you're planning a modernisation — or not yet sure whether you need one —
 **[marvin-richter.de →](https://marvin-richter.de)**
 
 ## Contributing
 
 Found an error? Have a pattern to add?
 [Open an issue](https://github.com/marvinrichter/jvm-modernisation-playbook/issues)
-or submit a PR — the `docs/` directory is the place to start.
+or send a PR — the `docs/` directory is the place to start.
