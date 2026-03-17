@@ -27,5 +27,5 @@ jobs:
           cache: maven
 
       - name: Verify ${{ matrix.example }}
-        run: ./mvnw --batch-mode verify
+        run: mvn --batch-mode verify
         working-directory: examples/${{ matrix.example }}
