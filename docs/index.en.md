@@ -9,9 +9,8 @@ Most modernisation guidance stops at the diagram. A neat Strangler Fig drawing, 
 three-layer hexagon, a "before/after" box-and-arrow slide. Then you're on your own when
 the legacy `OrderService` is 2,000 lines, has no tests, and six teams depend on it.
 
-This playbook covers the three patterns I reach for on every JVM modernisation
-engagement — not as theory, but as runnable before/after code examples you can clone,
-adapt, and run today.
+This playbook covers the three patterns for JVM modernisation — not as theory,
+but as runnable before/after code examples you can clone, adapt, and run today.
 
 ---
 
@@ -68,10 +67,5 @@ If you want to see the structure before walking through the migrations, start th
 
 ## Who wrote this
 
-I'm [Marvin Richter](https://marvin-richter.de), a freelance architect specialising in
-JVM modernisation. I've used each of these patterns on real client projects — these are
-not theoretical constructs assembled for a talk.
-
-If you're planning a modernisation and want a second opinion on which patterns to apply
-and how to sequence them:
-**[Let's talk →](https://marvin-richter.de)**
+I'm [Marvin Richter](https://marvin-richter.de), a software architect. These are
+patterns I've applied in real projects — not theoretical constructs assembled for a talk.

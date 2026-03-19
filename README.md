@@ -8,7 +8,7 @@
 ---
 
 Most modernisation guidance stops at the diagram. This playbook covers the three
-patterns I reach for on every JVM modernisation engagement — as runnable
+three patterns for JVM modernisation — as runnable
 Spring Boot code examples you can clone, run, and adapt.
 
 ## Patterns covered
@@ -59,11 +59,7 @@ mvn archetype:generate \
 
 ## About
 
-Written by [Marvin Richter](https://marvin-richter.de), freelance architect
-specialising in JVM modernisation.
-
-If you're planning a modernisation and want a second opinion or someone to lead it:
-**[marvin-richter.de →](https://marvin-richter.de)**
+Written by [Marvin Richter](https://marvin-richter.de).
 
 ## License
 
