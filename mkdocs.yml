@@ -61,6 +61,7 @@ plugins:
             Getting Started: Schnellstart
             Patterns: Muster
             Overview: Übersicht
+            Code Patterns: Code-Muster
             About: Über das Playbook
         - locale: en
           name: English
@@ -102,6 +103,7 @@ nav:
     - Strangler Fig: patterns/strangler-fig.md
     - Branch-by-Abstraction: patterns/branch-by-abstraction.md
     - Anti-Corruption Layer: patterns/anti-corruption-layer.md
+    - Code Patterns: patterns/code-patterns.md
   - About: about.md
 
 extra:

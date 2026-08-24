@@ -30,3 +30,12 @@ Diese Muster schließen sich nicht gegenseitig aus. Eine typische Modernisierung
 Die Reihenfolge ist wichtig: der Strangler Fig steuert, was das Legacy-System überhaupt
 noch erreicht. Branch-by-Abstraction restrukturiert die Interna des neuen Services.
 Der ACL verhindert, dass die beiden Domänenmodelle ineinander bluten.
+
+---
+
+## Auf Code-Ebene
+
+Die drei Muster oben bauen ein System um. Wie die einzelne Klasse danach
+aussieht, steht in [Code-Muster: gut und schlecht](code-patterns.md): sechs
+Paare aus schlechter und guter Fassung, jeweils mit der Zeile, die den
+Unterschied trägt, und den ArchUnit-Regeln, die sie im Build erzwingen.
