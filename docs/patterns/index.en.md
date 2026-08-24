@@ -30,3 +30,12 @@ These patterns are not mutually exclusive. A typical modernisation uses all thre
 The order matters: the Strangler Fig controls what reaches the legacy system at all.
 Branch-by-Abstraction restructures the internals of the new service.
 The ACL keeps the two domain models from bleeding into each other.
+
+---
+
+## At the code level
+
+The three patterns above reshape a system. What the single class looks like
+afterwards is in [Code patterns: good and bad](code-patterns.md): six pairs of
+smell and fix, each with the line that carries the difference, and the ArchUnit
+rules that enforce them in the build.
